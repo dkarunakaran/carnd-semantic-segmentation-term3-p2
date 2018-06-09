@@ -1,0 +1,6 @@
+data_road/
+data
+vgg/
+gtFine_trainvaltest/
+
+vgg16.npy
