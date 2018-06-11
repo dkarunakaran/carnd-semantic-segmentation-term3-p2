@@ -4,3 +4,5 @@ vgg/
 gtFine_trainvaltest/
 __pycache__/
 vgg16.npy
+saver/
+runs/
