@@ -3,12 +3,22 @@
 This project makes use of deep learning concepts that was learned through first term of the Udacity's nanodegree. In this project, we will label the pixels of a road in images using a Fully Convolutional Network (FCN).
 
 For few decades image segmentation was a complex task in computer vision. Image segmentation is different from image classification. In image classification, it will only classify objects that it has specific labels for such as horse, auto, house etc where as image segmentation algorithm will also segment unknown objects. Image segmentation is also known as semantic segmentation.
+Orginal image:
+<img src="images/orginal_images.jpg"/>
+
+Image after segmentation:
+<img src="images/orginal_after_seg.png"/>
 
 Before the deep learning influence in computer vision, other machine learning approaches such as Random forest where used to do the segmentation. Convolutional Neural Network(CNN) has enormous success in classifying the image in the past.
+
+<img src="images/cnn.jpg"/>
+
 
 In typical CNN structure, input layer followed by convolution layer, then it is connected to fully connected layer followed softmax to classify the image. CNN is to classify if the image has got particular object, but it more difficult to answer "where is the object in the image". This is because of fully connected layer doesn't preserve spatial information. The FCN model is the solution for the spatial problem with connected layers.
 
 Pooling layer is also one of the main problem, apart from fully connected layer, in CNN to preserve the spatial information. Pooling layer are able to aggregate the context while discarding the 'where' information. But in sematic segmentation, we need to preserver the 'where' context to map the each pixel to corresponding object class.
+
+<img src="images/fcn.png"/>
 
 In order to tackle this issue encoder-decoder architecture is used where encoder gradually reduces the spatial dimension with pooling layers and decoder gradually recovers the object details and spatial dimension. Also use skip connections from encoder to decoder to help decoder recover the object details better.FCN is one of that type architecture which replace fully connected layer with decoder.
 
