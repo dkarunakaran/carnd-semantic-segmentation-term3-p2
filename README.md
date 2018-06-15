@@ -3,10 +3,12 @@
 This project makes use of deep learning concepts that was learned through first term of the Udacity's nanodegree. In this project, we will label the pixels of a road in images using a Fully Convolutional Network (FCN).
 
 For few decades image segmentation was a complex task in computer vision. Image segmentation is different from image classification. In image classification, it will only classify objects that it has specific labels for such as horse, auto, house etc where as image segmentation algorithm will also segment unknown objects. Image segmentation is also known as semantic segmentation.
-Orginal image:
-<img src="images/orginal_images.jpeg"/>
-
-Image after segmentation:
+Orginal image
+<br/>
+<img src="images/orginal_image.jpg"/>
+<br/>
+Image after segmentation
+<br/>
 <img src="images/orginal_after_seg.png"/>
 
 Before the deep learning influence in computer vision, other machine learning approaches such as Random forest where used to do the segmentation. Convolutional Neural Network(CNN) has enormous success in classifying the image in the past.
@@ -30,6 +32,7 @@ input_layer, keep_prob_tensor, layer3, layer4, layer7 = load_vgg(sess, vgg_path)
 
 Once we have the above layers from VGG19, then we define the second part of FCN, decoder. In decoder we need to convert the ouput of the above layers into 1x1 convolution and then upsample then using convolution transposed. Also we define the skip connection as par of this. We define these functionality under layers functions as mentioned below:
 ```
+
 def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     """
     Create the layers for a fully convolutional network.  Build skip-layers using the vgg layers.
