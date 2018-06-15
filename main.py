@@ -126,9 +126,14 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
 
     # Loss and Optimizer
     cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=label_reshaped))
-    train_op = tf.train.AdamOptimizer(learning_rate= learning_rate).minimize(cross_entropy_loss)    
+
+    reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+    reg_constant = 1e-3
+    loss = cross_entropy_loss + reg_constant * sum(reg_losses)
+
+    train_op = tf.train.AdamOptimizer(learning_rate= learning_rate).minimize(loss)    
     
-    return logits, train_op, cross_entropy_loss
+    return logits, train_op, loss
 tests.test_optimize(optimize)
 
 
@@ -156,15 +161,24 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     # Training cycle
     for epoch in range(epochs):
         print("Epoch {}".format(epoch + 1))
+        training_loss = 0
+        training_samples_length = 0
         for image, label in get_batches_fn(batch_size):
-            #print(label)
+            training_samples_length += len(image)
             _, loss = sess.run([train_op, cross_entropy_loss], feed_dict={
                 input_image: image,
                 correct_label: label,
                 keep_prob: 0.5,
                 learning_rate: 0.0001
             })
+            training_loss += loss
             print(loss)
+        
+        # Total training loss
+        training_loss /= training_samples_length
+        print("********************Total loss***********************")
+        print(training_loss)
+
     pass
 tests.test_train_nn(train_nn)
 
@@ -203,8 +217,8 @@ def run():
 
         logits, train_op, cross_entropy_loss = optimize(nn_last_layer, correct_label_tensor, learning_rate_tensor, num_classes)     
         
-        epochs = 24
-        batch_size = 12
+        epochs = 50
+        batch_size = 5
         saver = tf.train.Saver()
         
         # TODO: Train NN using the train_nn function
