@@ -138,3 +138,5 @@ Final step for training the model is to defining the hyperparameters and looping
         print(training_loss)
  ```
 Hyperparameters we end up choose is Epochs = 50 and batch_size=5.
+
+Here is the few images we are managed to do image segmentation. Please remember, we only consider two classes: road or not road.
