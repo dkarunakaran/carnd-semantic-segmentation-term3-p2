@@ -4,11 +4,12 @@ This project makes use of deep learning concepts that was learned through first 
 
 For few decades image segmentation was a complex task in computer vision. Image segmentation is different from image classification. In image classification, it will only classify objects that it has specific labels for such as horse, auto, house etc where as image segmentation algorithm will also segment unknown objects. Image segmentation is also known as semantic segmentation.
 
-Orginal image
+Orginal image:
 <br/>
 <img src="images/orginal_image.jpg"/>
 <br/>
-Image after segmentation
+<br/>
+Image after segmentation:
 <br/>
 <img src="images/orginal_after_seg.png"/>
 
