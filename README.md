@@ -1,50 +1,140 @@
-# Semantic Segmentation
 [![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
+# Semantic Segmentation
+This project makes use of deep learning concepts that was learned through first term of the Udacity's nanodegree. In this project, we will label the pixels of a road in images using a Fully Convolutional Network (FCN).
 
-### Introduction
-In this project, you'll label the pixels of a road in images using a Fully Convolutional Network (FCN).
+For few decades image segmentation was a complex task in computer vision. Image segmentation is different from image classification. In image classification, it will only classify objects that it has specific labels for such as horse, auto, house etc where as image segmentation algorithm will also segment unknown objects. Image segmentation is also known as semantic segmentation.
 
-### Setup
-##### GPU
-`main.py` will check to make sure you are using GPU - if you don't have a GPU on your system, you can use AWS or another cloud computing platform.
-##### Frameworks and Packages
-Make sure you have the following is installed:
- - [Python 3](https://www.python.org/)
- - [TensorFlow](https://www.tensorflow.org/)
- - [NumPy](http://www.numpy.org/)
- - [SciPy](https://www.scipy.org/)
-##### Dataset
-Download the [Kitti Road dataset](http://www.cvlibs.net/datasets/kitti/eval_road.php) from [here](http://www.cvlibs.net/download.php?file=data_road.zip).  Extract the dataset in the `data` folder.  This will create the folder `data_road` with all the training a test images.
+Before the deep learning influence in computer vision, other machine learning approaches such as Random forest where used to do the segmentation. Convolutional Neural Network(CNN) has enormous success in classifying the image in the past.
 
-### Start
-##### Implement
-Implement the code in the `main.py` module indicated by the "TODO" comments.
-The comments indicated with "OPTIONAL" tag are not required to complete.
-##### Run
-Run the following command to run the project:
+In typical CNN structure, input layer followed by convolution layer, then it is connected to fully connected layer followed softmax to classify the image. CNN is to classify if the image has got particular object, but it more difficult to answer "where is the object in the image". This is because of fully connected layer doesn't preserve spatial information. The FCN model is the solution for the spatial problem with connected layers.
+
+Pooling layer is also one of the main problem, apart from fully connected layer, in CNN to preserve the spatial information. Pooling layer are able to aggregate the context while discarding the 'where' information. But in sematic segmentation, we need to preserver the 'where' context to map the each pixel to corresponding object class.
+
+In order to tackle this issue encoder-decoder architecture is used where encoder gradually reduces the spatial dimension with pooling layers and decoder gradually recovers the object details and spatial dimension. Also use skip connections from encoder to decoder to help decoder recover the object details better.FCN is one of that type architecture which replace fully connected layer with decoder.
+
+
+The project is based FCN8 which uses VGG16 as encoder. The first step is to load the downloaded VGG16 model.Then we load the VGG layer to get the input_layer, layer 3, layer 4, and layer 7 using load_vgg function we defined as part of the project.
 ```
-python main.py
+input_layer, keep_prob_tensor, layer3, layer4, layer7 = load_vgg(sess, vgg_path)
 ```
-**Note** If running this in Jupyter Notebook system messages, such as those regarding test status, may appear in the terminal rather than the notebook.
 
-### Submission
-1. Ensure you've passed all the unit tests.
-2. Ensure you pass all points on [the rubric](https://review.udacity.com/#!/rubrics/989/view).
-3. Submit the following in a zip file.
- - `helper.py`
- - `main.py`
- - `project_tests.py`
- - Newest inference images from `runs` folder  (**all images from the most recent run**)
- 
- ### Tips
-- The link for the frozen `VGG16` model is hardcoded into `helper.py`.  The model can be found [here](https://s3-us-west-1.amazonaws.com/udacity-selfdrivingcar/vgg.zip)
-- The model is not vanilla `VGG16`, but a fully convolutional version, which already contains the 1x1 convolutions to replace the fully connected layers. Please see this [forum post](https://discussions.udacity.com/t/here-is-some-advice-and-clarifications-about-the-semantic-segmentation-project/403100/8?u=subodh.malgonde) for more information.  A summary of additional points, follow. 
-- The original FCN-8s was trained in stages. The authors later uploaded a version that was trained all at once to their GitHub repo.  The version in the GitHub repo has one important difference: The outputs of pooling layers 3 and 4 are scaled before they are fed into the 1x1 convolutions.  As a result, some students have found that the model learns much better with the scaling layers included. The model may not converge substantially faster, but may reach a higher IoU and accuracy. 
-- When adding l2-regularization, setting a regularizer in the arguments of the `tf.layers` is not enough. Regularization loss terms must be manually added to your loss function. otherwise regularization is not implemented.
- 
-### Using GitHub and Creating Effective READMEs
-If you are unfamiliar with GitHub , Udacity has a brief [GitHub tutorial](http://blog.udacity.com/2015/06/a-beginners-git-github-tutorial.html) to get you started. Udacity also provides a more detailed free [course on git and GitHub](https://www.udacity.com/course/how-to-use-git-and-github--ud775).
+Once we have the above layers from VGG19, then we define the second part of FCN, decoder. In decoder we need to convert the ouput of the above layers into 1x1 convolution and then upsample then using convolution transposed. Also we define the skip connection as par of this. We define these functionality under layers functions as mentioned below:
+```
+def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
+    """
+    Create the layers for a fully convolutional network.  Build skip-layers using the vgg layers.
+    :param vgg_layer3_out: TF Tensor for VGG Layer 3 output
+    :param vgg_layer4_out: TF Tensor for VGG Layer 4 output
+    :param vgg_layer7_out: TF Tensor for VGG Layer 7 output
+    :param num_classes: Number of classes to classify
+    :return: The Tensor for the last layer of output
+    """
+    
+    # 1X1 connvolution of the layer 7
+    conv_1x1_7th_layer = tf.layers.conv2d(vgg_layer7_out,num_classes, 1,padding = 'same',
+                                     kernel_regularizer= tf.contrib.layers.l2_regularizer(1e-3),
+                                     name='conv_1x1_7th_layer')
+    # Upsampling x 4
+    upsampling1 = tf.layers.conv2d_transpose(conv_1x1_7th_layer,
+                                                num_classes,
+                                                4,
+                                                strides= (2, 2),
+                                                padding= 'same',
+                                                kernel_regularizer= tf.contrib.layers.l2_regularizer(1e-3),
+                                                name='upsampling1')
+    # 1X1 convolution of the layer 4
+    conv_1x1_4th_layer = tf.layers.conv2d(vgg_layer4_out,
+                                     num_classes,
+                                     1,
+                                     padding = 'same',
+                                     kernel_regularizer= tf.contrib.layers.l2_regularizer(1e-3),
+                                     name='conv_1x1_4th_layer')
+    skip1 = tf.add(conv_1x1_4th_layer, upsampling1, name="skip1")
 
-To learn about REAMDE files and Markdown, Udacity provides a free [course on READMEs](https://www.udacity.com/courses/ud777), as well. 
+    # Upsampling x 4
+    upsampling2 = tf.layers.conv2d_transpose(skip1,
+                                    num_classes,
+                                    4,
+                                    strides= (2, 2),
+                                    padding= 'same',
+                                    kernel_regularizer= tf.contrib.layers.l2_regularizer(1e-3),
+                                    name='upsampling2')
 
-GitHub also provides a [tutorial](https://guides.github.com/features/mastering-markdown/) about creating Markdown files.
+    # 1X1 convolution of the layer 3
+    conv_1x1_3th_layer = tf.layers.conv2d(vgg_layer3_out,
+                                     num_classes,
+                                     1,
+                                     padding = 'same',
+                                     kernel_regularizer= tf.contrib.layers.l2_regularizer(1e-3),
+                                     name='conv_1x1_3th_layer')
+    skip2 = tf.add(conv_1x1_3th_layer, upsampling2, name="skip2")
+
+    # Upsampling x 8.
+    upsampling3 = tf.layers.conv2d_transpose(skip2, num_classes, 16,
+                                                  strides= (8, 8),
+                                                  padding= 'same',
+                                                  kernel_regularizer= tf.contrib.layers.l2_regularizer(1e-3),
+                                                  name='upsampling3')
+
+
+    return upsampling3
+```
+Then we define the optimize function where corss entropy loss and optimiser is defined
+```
+def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
+    """
+    Build the TensorFLow loss and optimizer operations.
+    :param nn_last_layer: TF Tensor of the last layer in the neural network
+    :param correct_label: TF Placeholder for the correct label image
+    :param learning_rate: TF Placeholder for the learning rate
+    :param num_classes: Number of classes to classify
+    :return: Tuple of (logits, train_op, cross_entropy_loss)
+    """
+    # TODO: Implement function
+
+    # Reshape the label same as logits 
+    label_reshaped = tf.reshape(correct_label, (-1,num_classes))
+
+    # Converting the 4D tensor to 2D tensor. logits is now a 2D tensor where each row represents a pixel and each column a class
+    logits = tf.reshape(nn_last_layer, (-1, num_classes))
+
+    # Name logits Tensor, so that is can be loaded from disk after training
+    logits = tf.identity(logits, name='logits')
+
+    # Loss and Optimizer
+    cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=label_reshaped))
+
+    reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+    reg_constant = 1e-3
+    loss = cross_entropy_loss + reg_constant * sum(reg_losses)
+
+    train_op = tf.train.AdamOptimizer(learning_rate= learning_rate).minimize(loss)    
+    
+    return logits, train_op, loss
+```
+Final step for training the model is to defining the hyperparameters and looping the images through the function mentioned above.
+```   
+   sess.run(tf.global_variables_initializer())
+    
+    # Training cycle
+    for epoch in range(epochs):
+        print("Epoch {}".format(epoch + 1))
+        training_loss = 0
+        training_samples_length = 0
+        for image, label in get_batches_fn(batch_size):
+            training_samples_length += len(image)
+            _, loss = sess.run([train_op, cross_entropy_loss], feed_dict={
+                input_image: image,
+                correct_label: label,
+                keep_prob: 0.5,
+                learning_rate: 0.0001
+            })
+            training_loss += loss
+            print(loss)
+        
+        # Total training loss
+        training_loss /= training_samples_length
+        print("********************Total loss***********************")
+        print(training_loss)
+ ```
+Hyperparameters we end up choose is Epochs = 50 and batch_size=5.
